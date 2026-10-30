@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: assessment-sandbox
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-execution-network
+  namespace: assessment-sandbox
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress: []
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: execution-bounds
+  namespace: assessment-sandbox
+spec:
+  hard:
+    pods: '8'
+    requests.cpu: '2'
+    requests.memory: 4Gi
+    limits.cpu: '8'
+    limits.memory: 4Gi
+    count/configmaps: '64'
+    count/jobs.batch: '64'
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: assessment-runner
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: execution-gateway
+  namespace: assessment-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: execution-gateway
+  namespace: assessment-sandbox
+rules:
+  - apiGroups: ['batch']
+    resources: ['jobs']
+    verbs: ['create','get','list','delete']
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['create','get','list','delete','patch']
+  - apiGroups: ['']
+    resources: ['pods','pods/log']
+    verbs: ['get','list']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: execution-gateway
+  namespace: assessment-sandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: execution-gateway
+subjects:
+  - kind: ServiceAccount
+    name: execution-gateway
+    namespace: assessment-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: assessment-runtime-check
+rules:
+  - apiGroups: ['node.k8s.io']
+    resources: ['runtimeclasses']
+    resourceNames: ['gvisor']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: assessment-runtime-check
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: assessment-runtime-check
+subjects:
+  - kind: ServiceAccount
+    name: execution-gateway
+    namespace: assessment-runner
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: assessment-gvisor-required
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: ['v1']
+        operations: ['CREATE','UPDATE']
+        resources: ['pods']
+  validations:
+    - expression: "object.metadata.namespace != 'assessment-sandbox' || (has(object.spec.runtimeClassName) && object.spec.runtimeClassName == 'gvisor' && has(object.spec.automountServiceAccountToken) && object.spec.automountServiceAccountToken == false && object.spec.containers.all(c, c.image.matches('^.+@sha256:[a-f0-9]{64}$')))"
+      message: Assessment execution requires gVisor, disabled service-account tokens and digest-pinned images.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: assessment-gvisor-required
+spec:
+  policyName: assessment-gvisor-required
+  validationActions: [Deny]

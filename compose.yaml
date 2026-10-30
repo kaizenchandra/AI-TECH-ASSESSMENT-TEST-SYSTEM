@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: assessment
+      POSTGRES_USER: assessment
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
+    volumes: [database:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U assessment -d assessment"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [internal]
+  mail:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025"]
+    networks: [internal,web]
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/assessment
+      DATABASE_USER: assessment
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      SMTP_HOST: mail
+      SMTP_PORT: 1025
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      AI_MODE: ${AI_MODE:-disabled}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_LIVE_APPROVED: ${AI_LIVE_APPROVED:-false}
+      AI_CANDIDATE_PROCESSING_APPROVED: ${AI_CANDIDATE_PROCESSING_APPROVED:-false}
+      AI_BUDGET_UNITS: ${AI_BUDGET_UNITS:-10000}
+      APP_ENV: ${APP_ENV:-local}
+      RUNNER_URL: ${RUNNER_URL:-}
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-}
+    depends_on:
+      db: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [internal,egress]
+  frontend:
+    build: ./frontend
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on: [backend]
+    networks: [internal,web]
+networks:
+  internal: {internal: true}
+  egress: {}
+  web: {}
+volumes:
+  database: {}

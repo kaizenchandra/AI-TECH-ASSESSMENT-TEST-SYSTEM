@@ -1,0 +1,232 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "skills",
+    "questions",
+    "limitations",
+    "findings"
+  ],
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "weight",
+          "evidence",
+          "observation"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "java",
+              "spring",
+              "kafka",
+              "sql",
+              "coding",
+              "system-design"
+            ]
+          },
+          "weight": {
+            "type": "integer"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "observation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "skill",
+          "options",
+          "correct",
+          "rationale",
+          "description",
+          "coding"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SINGLE",
+              "MULTIPLE",
+              "CODING"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "skill": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correct": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "coding": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "language",
+                  "starterCode",
+                  "referenceSolution",
+                  "samples",
+                  "hiddenTests",
+                  "timeoutMs",
+                  "memoryMb"
+                ],
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "java",
+                      "python",
+                      "javascript"
+                    ]
+                  },
+                  "starterCode": {
+                    "type": "string"
+                  },
+                  "referenceSolution": {
+                    "type": "string"
+                  },
+                  "samples": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "input",
+                        "output"
+                      ],
+                      "properties": {
+                        "input": {
+                          "type": "string"
+                        },
+                        "output": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "hiddenTests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "input",
+                        "output",
+                        "weight"
+                      ],
+                      "properties": {
+                        "input": {
+                          "type": "string"
+                        },
+                        "output": {
+                          "type": "string"
+                        },
+                        "weight": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "timeoutMs": {
+                    "type": "integer"
+                  },
+                  "memoryMb": {
+                    "type": "integer"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "questionId",
+          "firstLine",
+          "lastLine",
+          "excerpt",
+          "criterion",
+          "observation"
+        ],
+        "properties": {
+          "questionId": {
+            "type": "string"
+          },
+          "firstLine": {
+            "type": "integer"
+          },
+          "lastLine": {
+            "type": "integer"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "criterion": {
+            "type": "string",
+            "enum": [
+              "READABILITY",
+              "MAINTAINABILITY",
+              "COMPLEXITY"
+            ]
+          },
+          "observation": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

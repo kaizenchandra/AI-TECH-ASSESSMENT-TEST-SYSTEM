@@ -1,0 +1,12 @@
+ALTER TABLE candidate_review_requests ADD COLUMN organization_id uuid REFERENCES organizations;
+UPDATE candidate_review_requests r SET organization_id=a.organization_id FROM assessment_attempts a WHERE a.id=r.attempt_id;
+ALTER TABLE candidate_review_requests ALTER COLUMN organization_id SET NOT NULL;
+ALTER TABLE candidate_review_requests ADD CONSTRAINT review_attempt_tenant_fk FOREIGN KEY(organization_id,attempt_id) REFERENCES assessment_attempts(organization_id,id);
+ALTER TABLE candidate_review_requests ADD COLUMN revision bigint NOT NULL DEFAULT 0;
+ALTER TABLE candidate_review_requests ADD COLUMN assigned_to uuid;
+ALTER TABLE candidate_review_requests ADD CONSTRAINT review_assignee_tenant_fk FOREIGN KEY(organization_id,assigned_to) REFERENCES organization_members(organization_id,user_id);
+ALTER TABLE candidate_review_requests ADD COLUMN response text;
+ALTER TABLE candidate_review_requests ADD COLUMN resolved_at timestamptz;
+ALTER TABLE candidate_review_requests ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+CREATE INDEX review_queue_idx ON candidate_review_requests(organization_id,state,created_at);
+CREATE INDEX review_candidate_idx ON candidate_review_requests(candidate_id,created_at);

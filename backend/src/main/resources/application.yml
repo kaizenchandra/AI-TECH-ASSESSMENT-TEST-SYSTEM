@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/assessment}
+    username: ${DATABASE_USER:assessment}
+    password: ${DATABASE_PASSWORD}
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  servlet:
+    session:
+      timeout: 60m
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${COOKIE_SECURE:true}
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+app:
+  public-url: ${PUBLIC_URL:http://localhost:8080}
+  mail-from: ${MAIL_FROM:assessment@localhost}
+  ai:
+    mode: ${AI_MODE:disabled}
+    model: ${AI_MODEL:}
+    key: ${AI_API_KEY:}
+    budget-units: ${AI_BUDGET_UNITS:10000}
+---
+spring:
+  task:
+    scheduling:
+      pool:
+        size: 4
